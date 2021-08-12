@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Compass</string>
+    <string name="set_destination_btn">set destination</string>
 </resources>
