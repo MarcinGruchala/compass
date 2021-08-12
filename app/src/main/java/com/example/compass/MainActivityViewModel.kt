@@ -18,4 +18,6 @@ class MainActivityViewModel : ViewModel() {
     val isLastMagnetFiledValueCopied: MutableLiveData<Boolean> by lazy {
         MutableLiveData<Boolean>(false)
     }
+
+    fun getNewAzimuthInDegrees() = Math.toDegrees(orientation[0].toDouble()).toFloat()
 }

@@ -4,12 +4,11 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.animation.Animation
 import android.view.animation.RotateAnimation
 import androidx.activity.viewModels
-import androidx.core.graphics.rotationMatrix
+import androidx.appcompat.app.AppCompatActivity
 import com.example.compass.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity(), SensorEventListener  {
@@ -43,41 +42,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
 
     override fun onSensorChanged(event: SensorEvent?) {
         if (event != null) {
-            if (event.sensor == accelerometerSensor ) {
-                System.arraycopy(
-                    event.values,
-                    0,
-                    viewModel.lastAccelerometerValue,
-                    0,event.values.size
-                )
-                viewModel.isLastAccelerometerValueCopied.value = true
-            } else if (event.sensor == magneticFieldSensor) {
-                System.arraycopy(
-                    event.values,
-                    0,
-                    viewModel.lastMagneticFieldValue,
-                    0,
-                    event.values.size
-                )
-                viewModel.isLastMagnetFiledValueCopied.value = true
-            }
-
-            if (viewModel.isLastAccelerometerValueCopied.value == true &&
-                viewModel.isLastMagnetFiledValueCopied.value == true &&
-                System.currentTimeMillis() - viewModel.lastSensorsUpdateTime > 250) {
-                SensorManager.getRotationMatrix(
-                    viewModel.rotationMatrix,
-                    null,
-                    viewModel.lastAccelerometerValue,
-                    viewModel.lastMagneticFieldValue
-                )
-                SensorManager.getOrientation(
-                    viewModel.rotationMatrix,
-                    viewModel.orientation
-                )
-                val azimuth = Math.toDegrees(viewModel.orientation[0].toDouble()).toFloat()
-                updateCompass(azimuth)
-
+            readSensorEvent(event)
+            if (validateNewSensorData()) {
+                saveNewSensorData()
+                updateCompass(viewModel.getNewAzimuthInDegrees())
             }
         }
     }
@@ -95,6 +63,48 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
         sensorManager.unregisterListener(this, magneticFieldSensor)
     }
 
+    private fun readSensorEvent(event: SensorEvent) {
+        if (event.sensor == accelerometerSensor ) {
+            System.arraycopy(
+                event.values,
+                0,
+                viewModel.lastAccelerometerValue,
+                0,event.values.size
+            )
+            viewModel.isLastAccelerometerValueCopied.value = true
+        } else if (event.sensor == magneticFieldSensor) {
+            System.arraycopy(
+                event.values,
+                0,
+                viewModel.lastMagneticFieldValue,
+                0,
+                event.values.size
+            )
+            viewModel.isLastMagnetFiledValueCopied.value = true
+        }
+    }
+
+    private fun validateNewSensorData(): Boolean {
+        if (viewModel.isLastAccelerometerValueCopied.value == true &&
+            viewModel.isLastMagnetFiledValueCopied.value == true &&
+            System.currentTimeMillis() - viewModel.lastSensorsUpdateTime > 250) {
+            return true
+        }
+        return false
+    }
+
+    private fun saveNewSensorData() {
+        SensorManager.getRotationMatrix(
+            viewModel.rotationMatrix,
+            null,
+            viewModel.lastAccelerometerValue,
+            viewModel.lastMagneticFieldValue
+        )
+        SensorManager.getOrientation(
+            viewModel.rotationMatrix,
+            viewModel.orientation
+        )
+    }
 
     private fun updateCompass(newAzimuth: Float) {
         val rotationAnimation = RotateAnimation(
