@@ -42,10 +42,11 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
 
     override fun onSensorChanged(event: SensorEvent?) {
         if (event != null) {
-            readSensorEvent(event)
+            saveSensorEventData(event)
             if (validateNewSensorData()) {
-                saveNewSensorData()
+                calculateOrientation()
                 updateCompass(viewModel.getNewAzimuthInDegrees())
+                updateDestinationArrow(-viewModel.getNewAzimuthInDegrees())
             }
         }
     }
@@ -63,7 +64,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
         sensorManager.unregisterListener(this, magneticFieldSensor)
     }
 
-    private fun readSensorEvent(event: SensorEvent) {
+    private fun saveSensorEventData(event: SensorEvent) {
         if (event.sensor == accelerometerSensor ) {
             System.arraycopy(
                 event.values,
@@ -93,7 +94,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
         return false
     }
 
-    private fun saveNewSensorData() {
+    private fun calculateOrientation() {
         SensorManager.getRotationMatrix(
             viewModel.rotationMatrix,
             null,
@@ -108,7 +109,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
 
     private fun updateCompass(newAzimuth: Float) {
         val rotationAnimation = RotateAnimation(
-            viewModel.currentAzimuth,
+            viewModel.currentCompassAzimuth,
             -newAzimuth,
             Animation.RELATIVE_TO_SELF,
             0.5f,
@@ -121,7 +122,25 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
 
         binding.ivCompass.startAnimation(rotationAnimation)
 
-        viewModel.currentAzimuth = -newAzimuth
+        viewModel.currentCompassAzimuth = -newAzimuth
         viewModel.lastSensorsUpdateTime = System.currentTimeMillis()
+    }
+
+    private fun updateDestinationArrow(newAzimuth: Float) {
+        val rotationAnimation = RotateAnimation(
+            viewModel.currentDestinationArrowAzimuth,
+            -newAzimuth,
+            Animation.RELATIVE_TO_SELF,
+            0.5f,
+            Animation.RELATIVE_TO_SELF,
+            0.5f
+        )
+
+        rotationAnimation.duration = 250
+        rotationAnimation.fillAfter = true
+
+        binding.ivDestinationArrow.startAnimation(rotationAnimation)
+
+        viewModel.currentDestinationArrowAzimuth = -newAzimuth
     }
 }
