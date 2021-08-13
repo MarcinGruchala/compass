@@ -7,4 +7,5 @@
     <string name="enter_latHint">Enter Lat</string>
     <string name="enter_lonHint">Enter Lon</string>
     <string name="distance_from_the_destination">Distance from the destination: %1$dm</string>
+    <string name="distance_from_the_destination_empty">Distance from the destination:</string>
 </resources>

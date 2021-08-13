@@ -24,7 +24,7 @@
         android:background="@drawable/rounded_frame"
         android:elevation="10dp"
         android:padding="15dp"
-        android:text="Distance from the destination: 1222m"
+        android:text="@string/distance_from_the_destination_empty"
         android:textColor="@color/main_green"
         android:textStyle="bold"
         app:drawableTintMode="add"
