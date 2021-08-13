@@ -1,4 +1,4 @@
-package com.example.compass
+package com.example.compass.views
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -20,6 +20,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Observer
 import com.example.compass.databinding.ActivityMainBinding
+import com.example.compass.viewmodels.MainActivityViewModel
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
 import com.google.android.gms.tasks.Task
@@ -29,15 +30,17 @@ private const val REQUEST_CHECK_SETTINGS = 20
 class MainActivity : AppCompatActivity(), SensorEventListener  {
     private val requiredPermissions = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
     private lateinit var binding: ActivityMainBinding
-    private val viewModel: MainActivityViewModel by viewModels()
     private lateinit var sensorManager: SensorManager
     private lateinit var accelerometerSensor: Sensor
     private lateinit var magneticFieldSensor: Sensor
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var locationRequest: LocationRequest
     private lateinit var locationCallback: LocationCallback
+    private val viewModel: MainActivityViewModel by viewModels()
 
-    override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onCreate(
+        savedInstanceState: Bundle?
+    ) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -55,7 +58,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
         }
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
-                locationResult ?: return
                 for (location in locationResult.locations) {
                     Log.d("MainActivity", "Current location: $location")
                     viewModel.currentLocation.value = location
@@ -69,7 +71,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
         viewModel.currentLocation.observe(this, currentLocationObserver)
     }
 
-
     override fun onResume() {
         super.onResume()
         registerSensorsListeners()
@@ -82,18 +83,23 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
         stopLocationUpdates()
     }
 
-    override fun onSensorChanged(event: SensorEvent?) {
+    override fun onSensorChanged(
+        event: SensorEvent?
+    ) {
         if (event != null) {
-            saveSensorEventData(event)
-            if (validateNewSensorData()) {
-                calculateOrientation()
+            viewModel.saveSensorEventData(event,accelerometerSensor,magneticFieldSensor)
+            if (viewModel.validateNewSensorData()) {
+                viewModel.calculateOrientation()
                 updateCompass(viewModel.getNewAzimuthInDegrees())
                 updateDestinationArrow(-viewModel.getNewAzimuthInDegrees())
             }
         }
     }
 
-    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+    override fun onAccuracyChanged(
+        sensor: Sensor?,
+        accuracy: Int
+    ) {}
 
     override fun onRequestPermissionsResult(
         requestCode: Int,
@@ -125,14 +131,12 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
     private fun checkLocationSettingsAndStartLocationUpdates() {
         val locationBuilder = LocationSettingsRequest.Builder()
             .addAllLocationRequests(listOf(locationRequest))
-
         val client: SettingsClient = LocationServices.getSettingsClient(this)
         val task: Task<LocationSettingsResponse> = client.checkLocationSettings(locationBuilder.build())
 
-        task.addOnSuccessListener { locationSettingsResponse ->
-           startLocationUpdates()
+        task.addOnSuccessListener {
+            startLocationUpdates()
         }
-
         task.addOnFailureListener { exception ->
             if (exception is ResolvableApiException){
                 try {
@@ -173,50 +177,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
         sensorManager.unregisterListener(this, magneticFieldSensor)
     }
 
-    private fun saveSensorEventData(event: SensorEvent) {
-        if (event.sensor == accelerometerSensor ) {
-            System.arraycopy(
-                event.values,
-                0,
-                viewModel.lastAccelerometerValue,
-                0,event.values.size
-            )
-            viewModel.isLastAccelerometerValueCopied.value = true
-        } else if (event.sensor == magneticFieldSensor) {
-            System.arraycopy(
-                event.values,
-                0,
-                viewModel.lastMagneticFieldValue,
-                0,
-                event.values.size
-            )
-            viewModel.isLastMagnetFiledValueCopied.value = true
-        }
-    }
-
-    private fun validateNewSensorData(): Boolean {
-        if (viewModel.isLastAccelerometerValueCopied.value == true &&
-            viewModel.isLastMagnetFiledValueCopied.value == true &&
-            System.currentTimeMillis() - viewModel.lastSensorsUpdateTime > 250) {
-            return true
-        }
-        return false
-    }
-
-    private fun calculateOrientation() {
-        SensorManager.getRotationMatrix(
-            viewModel.rotationMatrix,
-            null,
-            viewModel.lastAccelerometerValue,
-            viewModel.lastMagneticFieldValue
-        )
-        SensorManager.getOrientation(
-            viewModel.rotationMatrix,
-            viewModel.orientation
-        )
-    }
-
-    private fun updateCompass(newAzimuth: Float) {
+    private fun updateCompass(
+        newAzimuth: Float
+    ) {
         val rotationAnimation = RotateAnimation(
             viewModel.currentCompassAzimuth,
             -newAzimuth,
@@ -235,7 +198,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
         viewModel.lastSensorsUpdateTime = System.currentTimeMillis()
     }
 
-    private fun updateDestinationArrow(newAzimuth: Float) {
+    private fun updateDestinationArrow(
+        newAzimuth: Float
+    ) {
         val rotationAnimation = RotateAnimation(
             viewModel.currentDestinationArrowAzimuth,
             -newAzimuth,
@@ -252,5 +217,4 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
 
         viewModel.currentDestinationArrowAzimuth = -newAzimuth
     }
-
 }
