@@ -2,4 +2,8 @@
     <string name="app_name">Compass</string>
     <string name="set_destination_btn">set destination</string>
     <string name="compass_image_description">compass image</string>
+    <string name="submitBtn">Submit</string>
+    <string name="go_backBtn">Go back</string>
+    <string name="enter_latHint">Enter Lat</string>
+    <string name="enter_lonHint">Enter Lon</string>
 </resources>

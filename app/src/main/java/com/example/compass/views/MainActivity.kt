@@ -2,6 +2,7 @@ package com.example.compass.views
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.content.IntentSender
 import android.content.pm.PackageManager
 import android.hardware.Sensor
@@ -69,6 +70,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
             binding.tvLocation.text = "Lat: ${location.latitude} Lon: ${location.longitude}"
         }
         viewModel.currentLocation.observe(this, currentLocationObserver)
+
+        setupOnclickListeners()
     }
 
     override fun onResume() {
@@ -175,6 +178,14 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
     private fun unRegisterSensorsListeners() {
         sensorManager.unregisterListener(this, accelerometerSensor)
         sensorManager.unregisterListener(this, magneticFieldSensor)
+    }
+
+    private fun setupOnclickListeners() {
+        binding.brnSetDestination.setOnClickListener {
+            Intent(this,SetDestinationActivity::class.java).also {
+                startActivity(it)
+            }
+        }
     }
 
     private fun updateCompass(
