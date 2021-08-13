@@ -5,9 +5,17 @@ import android.hardware.SensorEvent
 import android.hardware.SensorManager
 import android.location.Location
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModel
+import com.example.compass.models.GeoLocation
+import com.example.compass.repository.Repository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
-class MainActivityViewModel : ViewModel() {
+@HiltViewModel
+class MainActivityViewModel @Inject constructor(
+    private val repository: Repository
+) : ViewModel() {
     var lastAccelerometerValue = FloatArray(3)
     var lastMagneticFieldValue = FloatArray(3)
     var rotationMatrix = FloatArray(9)
@@ -18,11 +26,11 @@ class MainActivityViewModel : ViewModel() {
 
     var currentDestinationArrowAzimuth = 0f
 
-    val isLastAccelerometerValueCopied: MutableLiveData<Boolean> by lazy {
+    private val isLastAccelerometerValueCopied: MutableLiveData<Boolean> by lazy {
         MutableLiveData<Boolean>(false)
     }
 
-    val isLastMagnetFiledValueCopied: MutableLiveData<Boolean> by lazy {
+    private val isLastMagnetFiledValueCopied: MutableLiveData<Boolean> by lazy {
         MutableLiveData<Boolean>(false)
     }
 
@@ -30,7 +38,28 @@ class MainActivityViewModel : ViewModel() {
         MutableLiveData<Location>()
     }
 
+    val isDestinationUpdated: MutableLiveData<Boolean> by lazy {
+        MutableLiveData<Boolean>(false)
+    }
+
+    private val destinationObserver = Observer<GeoLocation> {
+        isDestinationUpdated.value = true
+    }
+
+    init {
+        repository.destination.observeForever(destinationObserver)
+    }
+
     fun getNewAzimuthInDegrees() = Math.toDegrees(orientation[0].toDouble()).toFloat()
+
+    fun getDestination() = repository.destination.value
+
+    fun checkDestination(): Boolean {
+        if (repository.destination.value == null) {
+            return false
+        }
+        return true
+    }
 
     fun saveSensorEventData(
         event: SensorEvent,

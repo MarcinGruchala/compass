@@ -2,6 +2,7 @@ package com.example.compass.views
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.content.IntentSender
 import android.content.pm.PackageManager
 import android.hardware.Sensor
@@ -12,6 +13,7 @@ import android.location.Location
 import android.os.Bundle
 import android.os.Looper
 import android.util.Log
+import com.example.compass.R
 import android.view.animation.Animation
 import android.view.animation.RotateAnimation
 import androidx.activity.viewModels
@@ -24,9 +26,11 @@ import com.example.compass.viewmodels.MainActivityViewModel
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
 import com.google.android.gms.tasks.Task
+import dagger.hilt.android.AndroidEntryPoint
 
 private const val FINE_LOCATION_PERMISSION_REQUEST_CODE = 10
 private const val REQUEST_CHECK_SETTINGS = 20
+@AndroidEntryPoint
 class MainActivity : AppCompatActivity(), SensorEventListener  {
     private val requiredPermissions = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
     private lateinit var binding: ActivityMainBinding
@@ -66,9 +70,22 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
         }
 
         val currentLocationObserver = Observer<Location> { location ->
-            binding.tvLocation.text = "Lat: ${location.latitude} Lon: ${location.longitude}"
+            binding.tvLocation.text = "Current location: Lat: ${location.latitude} Lon: ${location.longitude}"
+            updateDistanceFromTheDestination()
         }
         viewModel.currentLocation.observe(this, currentLocationObserver)
+
+        val isDestinationUpdatedObserver = Observer<Boolean> { newValue ->
+            if (newValue) {
+                val newDestination = viewModel.getDestination()
+                binding.tvDestination.text = "Destination: Lat: ${newDestination?.lat} Lon: ${newDestination?.lon}"
+                viewModel.isDestinationUpdated.value = false
+                updateDistanceFromTheDestination()
+            }
+        }
+        viewModel.isDestinationUpdated.observe(this, isDestinationUpdatedObserver)
+
+        setupOnclickListeners()
     }
 
     override fun onResume() {
@@ -177,6 +194,14 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
         sensorManager.unregisterListener(this, magneticFieldSensor)
     }
 
+    private fun setupOnclickListeners() {
+        binding.brnSetDestination.setOnClickListener {
+            Intent(this,SetDestinationActivity::class.java).also {
+                startActivity(it)
+            }
+        }
+    }
+
     private fun updateCompass(
         newAzimuth: Float
     ) {
@@ -216,5 +241,19 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
         binding.ivDestinationArrow.startAnimation(rotationAnimation)
 
         viewModel.currentDestinationArrowAzimuth = -newAzimuth
+    }
+
+    private fun updateDistanceFromTheDestination() {
+        val destinationFromRepository = viewModel.getDestination()
+        if (destinationFromRepository != null) {
+            val destination = Location("destination")
+            destination.latitude = destinationFromRepository.lat
+            destination.longitude = destinationFromRepository.lon
+            val distance = viewModel.currentLocation.value?.distanceTo(destination)?.toInt()
+            binding.tvDistance.text = getString(
+                R.string.distance_from_the_destination,
+                distance
+            )
+        }
     }
 }
