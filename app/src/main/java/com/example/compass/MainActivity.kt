@@ -1,19 +1,26 @@
 package com.example.compass
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.location.Location
 import android.os.Bundle
+import android.util.Log
 import android.view.animation.Animation
 import android.view.animation.RotateAnimation
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Observer
 import com.example.compass.databinding.ActivityMainBinding
+import com.example.compass.model.GeoLocation
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 
 private const val FINE_LOCATION_PERMISSION_REQUEST_CODE = 10
 class MainActivity : AppCompatActivity(), SensorEventListener  {
@@ -23,6 +30,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
     private lateinit var sensorManager: SensorManager
     private lateinit var accelerometerSensor: Sensor
     private lateinit var magneticFieldSensor: Sensor
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,6 +42,14 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
         sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
         accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         magneticFieldSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+
+        setupOnClickListeners()
+
+        val currentLocationObserver = Observer<GeoLocation> { newGeoLocation ->
+            binding.tvLocation.text = "Lat: ${newGeoLocation.lat} Lon: ${newGeoLocation.lon}"
+        }
+        viewModel.currentLocation.observe(this, currentLocationObserver)
     }
 
     override fun onResume() {
@@ -80,8 +96,23 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
         }
     }
 
-    private fun checkPermissions() = requiredPermissions.all {
-        ContextCompat.checkSelfPermission(baseContext,it) == PackageManager.PERMISSION_GRANTED
+    private fun checkPermissions(): Boolean {
+        return requiredPermissions.all {
+            ContextCompat.checkSelfPermission(baseContext,it) == PackageManager.PERMISSION_GRANTED
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun getLastLocation() {
+        if (checkPermissions()) {
+            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                val lat = location.latitude
+                val lon = location.longitude
+                viewModel.currentLocation.value = GeoLocation(lat, lon)
+            }
+        } else {
+            getPermissions()
+        }
     }
 
     private fun registerSensorsListeners() {
@@ -173,4 +204,11 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
 
         viewModel.currentDestinationArrowAzimuth = -newAzimuth
     }
+
+    private fun setupOnClickListeners() {
+        binding.btnGetLocation.setOnClickListener {
+            getLastLocation()
+        }
+    }
+
 }
