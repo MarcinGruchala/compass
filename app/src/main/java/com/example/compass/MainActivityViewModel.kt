@@ -1,5 +1,6 @@
 package com.example.compass
 
+import android.location.Location
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.example.compass.model.GeoLocation
@@ -23,8 +24,8 @@ class MainActivityViewModel : ViewModel() {
         MutableLiveData<Boolean>(false)
     }
 
-    val currentLocation: MutableLiveData<GeoLocation> by lazy {
-        MutableLiveData<GeoLocation>()
+    val currentLocation: MutableLiveData<Location> by lazy {
+        MutableLiveData<Location>()
     }
 
     fun getNewAzimuthInDegrees() = Math.toDegrees(orientation[0].toDouble()).toFloat()
