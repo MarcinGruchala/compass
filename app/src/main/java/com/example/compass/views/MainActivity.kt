@@ -25,9 +25,11 @@ import com.example.compass.viewmodels.MainActivityViewModel
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
 import com.google.android.gms.tasks.Task
+import dagger.hilt.android.AndroidEntryPoint
 
 private const val FINE_LOCATION_PERMISSION_REQUEST_CODE = 10
 private const val REQUEST_CHECK_SETTINGS = 20
+@AndroidEntryPoint
 class MainActivity : AppCompatActivity(), SensorEventListener  {
     private val requiredPermissions = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
     private lateinit var binding: ActivityMainBinding

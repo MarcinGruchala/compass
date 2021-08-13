@@ -6,8 +6,14 @@ import android.hardware.SensorManager
 import android.location.Location
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import com.example.compass.repository.Repository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
-class MainActivityViewModel : ViewModel() {
+@HiltViewModel
+class MainActivityViewModel @Inject constructor(
+    private val repository: Repository
+) : ViewModel() {
     var lastAccelerometerValue = FloatArray(3)
     var lastMagneticFieldValue = FloatArray(3)
     var rotationMatrix = FloatArray(9)
