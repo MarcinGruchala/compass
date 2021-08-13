@@ -1,21 +1,31 @@
 package com.example.compass
 
 import android.Manifest
+import android.annotation.SuppressLint
+import android.content.IntentSender
 import android.content.pm.PackageManager
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.location.Location
 import android.os.Bundle
+import android.os.Looper
+import android.util.Log
 import android.view.animation.Animation
 import android.view.animation.RotateAnimation
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Observer
 import com.example.compass.databinding.ActivityMainBinding
+import com.google.android.gms.common.api.ResolvableApiException
+import com.google.android.gms.location.*
+import com.google.android.gms.tasks.Task
 
 private const val FINE_LOCATION_PERMISSION_REQUEST_CODE = 10
+private const val REQUEST_CHECK_SETTINGS = 20
 class MainActivity : AppCompatActivity(), SensorEventListener  {
     private val requiredPermissions = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
     private lateinit var binding: ActivityMainBinding
@@ -23,6 +33,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
     private lateinit var sensorManager: SensorManager
     private lateinit var accelerometerSensor: Sensor
     private lateinit var magneticFieldSensor: Sensor
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private lateinit var locationRequest: LocationRequest
+    private lateinit var locationCallback: LocationCallback
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,16 +47,39 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
         sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
         accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         magneticFieldSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+        locationRequest = LocationRequest.create().apply {
+            interval = 10000
+            fastestInterval = 5000
+            priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+        }
+        locationCallback = object : LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult) {
+                locationResult ?: return
+                for (location in locationResult.locations) {
+                    Log.d("MainActivity", "Current location: $location")
+                    viewModel.currentLocation.value = location
+                }
+            }
+        }
+
+        val currentLocationObserver = Observer<Location> { location ->
+            binding.tvLocation.text = "Lat: ${location.latitude} Lon: ${location.longitude}"
+        }
+        viewModel.currentLocation.observe(this, currentLocationObserver)
     }
+
 
     override fun onResume() {
         super.onResume()
         registerSensorsListeners()
+        checkLocationSettingsAndStartLocationUpdates()
     }
 
     override fun onPause() {
         super.onPause()
         unRegisterSensorsListeners()
+        stopLocationUpdates()
     }
 
     override fun onSensorChanged(event: SensorEvent?) {
@@ -80,8 +116,51 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
         }
     }
 
-    private fun checkPermissions() = requiredPermissions.all {
-        ContextCompat.checkSelfPermission(baseContext,it) == PackageManager.PERMISSION_GRANTED
+    private fun checkPermissions(): Boolean {
+        return requiredPermissions.all {
+            ContextCompat.checkSelfPermission(baseContext,it) == PackageManager.PERMISSION_GRANTED
+        }
+    }
+
+    private fun checkLocationSettingsAndStartLocationUpdates() {
+        val locationBuilder = LocationSettingsRequest.Builder()
+            .addAllLocationRequests(listOf(locationRequest))
+
+        val client: SettingsClient = LocationServices.getSettingsClient(this)
+        val task: Task<LocationSettingsResponse> = client.checkLocationSettings(locationBuilder.build())
+
+        task.addOnSuccessListener { locationSettingsResponse ->
+           startLocationUpdates()
+        }
+
+        task.addOnFailureListener { exception ->
+            if (exception is ResolvableApiException){
+                try {
+                    exception.startResolutionForResult(
+                        this,
+                        REQUEST_CHECK_SETTINGS)
+                } catch (sendEx: IntentSender.SendIntentException) {
+                    // Ignore the error.
+                }
+            }
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun startLocationUpdates() {
+        if (checkPermissions()) {
+            fusedLocationClient.requestLocationUpdates(
+                locationRequest,
+                locationCallback,
+                Looper.getMainLooper()
+            )
+        } else {
+            getPermissions()
+        }
+    }
+
+    private fun stopLocationUpdates() {
+        fusedLocationClient.removeLocationUpdates(locationCallback)
     }
 
     private fun registerSensorsListeners() {
@@ -173,4 +252,5 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
 
         viewModel.currentDestinationArrowAzimuth = -newAzimuth
     }
+
 }
