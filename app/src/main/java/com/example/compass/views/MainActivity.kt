@@ -69,9 +69,18 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
         }
 
         val currentLocationObserver = Observer<Location> { location ->
-            binding.tvLocation.text = "Lat: ${location.latitude} Lon: ${location.longitude}"
+            binding.tvLocation.text = "Current location: Lat: ${location.latitude} Lon: ${location.longitude}"
         }
         viewModel.currentLocation.observe(this, currentLocationObserver)
+
+        val isDestinationUpdatedObserver = Observer<Boolean> { newValue ->
+            if (newValue) {
+                val newDestination = viewModel.getDestination()
+                binding.tvDestination.text = "Destination: Lat: ${newDestination?.lat} Lon: ${newDestination?.lon}"
+                viewModel.isDestinationUpdated.value = false
+            }
+        }
+        viewModel.isDestinationUpdated.observe(this, isDestinationUpdatedObserver)
 
         setupOnclickListeners()
     }
