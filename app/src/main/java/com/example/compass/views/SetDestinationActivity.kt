@@ -16,7 +16,7 @@ class SetDestinationActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivitySetDestinationBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        
+
         setupClickListeners()
     }
 

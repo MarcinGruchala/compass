@@ -54,6 +54,13 @@ class MainActivityViewModel @Inject constructor(
 
     fun getDestination() = repository.destination.value
 
+    fun checkDestination(): Boolean {
+        if (repository.destination.value == null) {
+            return false
+        }
+        return true
+    }
+
     fun saveSensorEventData(
         event: SensorEvent,
         accelerometerSensor: Sensor,

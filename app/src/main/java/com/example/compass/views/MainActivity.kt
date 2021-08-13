@@ -13,6 +13,7 @@ import android.location.Location
 import android.os.Bundle
 import android.os.Looper
 import android.util.Log
+import com.example.compass.R
 import android.view.animation.Animation
 import android.view.animation.RotateAnimation
 import androidx.activity.viewModels
@@ -70,6 +71,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
 
         val currentLocationObserver = Observer<Location> { location ->
             binding.tvLocation.text = "Current location: Lat: ${location.latitude} Lon: ${location.longitude}"
+            updateDistanceFromTheDestination()
         }
         viewModel.currentLocation.observe(this, currentLocationObserver)
 
@@ -78,6 +80,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
                 val newDestination = viewModel.getDestination()
                 binding.tvDestination.text = "Destination: Lat: ${newDestination?.lat} Lon: ${newDestination?.lon}"
                 viewModel.isDestinationUpdated.value = false
+                updateDistanceFromTheDestination()
             }
         }
         viewModel.isDestinationUpdated.observe(this, isDestinationUpdatedObserver)
@@ -238,5 +241,19 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
         binding.ivDestinationArrow.startAnimation(rotationAnimation)
 
         viewModel.currentDestinationArrowAzimuth = -newAzimuth
+    }
+
+    private fun updateDistanceFromTheDestination() {
+        val destinationFromRepository = viewModel.getDestination()
+        if (destinationFromRepository != null) {
+            val destination = Location("destination")
+            destination.latitude = destinationFromRepository.lat
+            destination.longitude = destinationFromRepository.lon
+            val distance = viewModel.currentLocation.value?.distanceTo(destination)?.toInt()
+            binding.tvDistance.text = getString(
+                R.string.distance_from_the_destination,
+                distance
+            )
+        }
     }
 }

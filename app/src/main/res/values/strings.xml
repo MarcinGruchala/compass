@@ -6,4 +6,5 @@
     <string name="go_backBtn">Go back</string>
     <string name="enter_latHint">Enter Lat</string>
     <string name="enter_lonHint">Enter Lon</string>
+    <string name="distance_from_the_destination">Distance from the destination: %1$dm</string>
 </resources>
