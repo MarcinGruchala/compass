@@ -92,6 +92,11 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
         }
         viewModel.currentDestinationArrowAzimuth.observe(this, currentDestinationArrowAzimuthObserver)
 
+        val currentBearingToDestinationObserver = Observer<Float> { azimuth ->
+            binding.tvBearingToDestination.text = "Bearing to: $azimuth °"
+        }
+        viewModel.currentBearingToDestination.observe(this, currentBearingToDestinationObserver)
+
         setupOnclickListeners()
     }
 

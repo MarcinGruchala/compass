@@ -1,6 +1,5 @@
 package com.example.compass.viewmodels
 
-import android.hardware.GeomagneticField
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorManager
@@ -40,6 +39,10 @@ class MainActivityViewModel @Inject constructor(
         MutableLiveData<Float>(0f)
     }
 
+    val currentBearingToDestination: MutableLiveData<Float> by lazy {
+        MutableLiveData<Float>(0f)
+    }
+
     val currentLocation: MutableLiveData<Location> by lazy {
         MutableLiveData<Location>()
     }
@@ -60,19 +63,11 @@ class MainActivityViewModel @Inject constructor(
 
     fun getDestinationArrowAzimuth(): Float {
         val destinationLocation = getLocationFromGeoLocation(repository.destination.value!!)
-        var bearToDestination = currentLocation.value!!.bearingTo(destinationLocation)
-        val geomagneticField = GeomagneticField(
-            currentLocation.value!!.latitude.toFloat(),
-            currentLocation.value!!.longitude.toFloat(),
-            currentLocation.value!!.altitude.toFloat(),
-            System.currentTimeMillis()
-        )
+        val bearToDestination = currentLocation.value!!.bearingTo(destinationLocation)
         val head = currentCompassAzimuth.value!!
-        if (bearToDestination < 0) {
-            bearToDestination += 360;
-        }
-        val direction = bearToDestination - head
-        return direction
+        currentBearingToDestination.value = bearToDestination
+        val direction = bearToDestination + head
+        return -direction
     }
 
     fun getDestinationLatLon() = repository.destination.value
