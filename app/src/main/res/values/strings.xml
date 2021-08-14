@@ -8,4 +8,5 @@
     <string name="enter_lonHint">Enter Lon</string>
     <string name="distance_from_the_destination">Distance from the destination: %1$dm</string>
     <string name="distance_from_the_destination_empty">Distance from the destination:</string>
+    <string name="destination_arrow_image_description">destination arrow image</string>
 </resources>

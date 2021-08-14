@@ -13,6 +13,7 @@ import android.location.Location
 import android.os.Bundle
 import android.os.Looper
 import android.util.Log
+import android.view.View
 import com.example.compass.R
 import android.view.animation.Animation
 import android.view.animation.RotateAnimation
@@ -77,25 +78,11 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
         val isDestinationUpdatedObserver = Observer<Boolean> { newValue ->
             if (newValue) {
                 viewModel.isDestinationUpdated.value = false
+                binding.ivDestinationArrow.visibility = View.VISIBLE
                 updateDistanceFromTheDestination()
             }
         }
         viewModel.isDestinationUpdated.observe(this, isDestinationUpdatedObserver)
-
-        val currentCompassAzimuthObserver = Observer<Float> { azimuth ->
-            binding.tvNorthAzimuth.text = "North: $azimuth °"
-        }
-        viewModel.currentCompassAzimuth.observe(this, currentCompassAzimuthObserver)
-
-        val currentDestinationArrowAzimuthObserver = Observer<Float> { azimuth ->
-            binding.tvDestinationAzimuth.text = "Destination: $azimuth °"
-        }
-        viewModel.currentDestinationArrowAzimuth.observe(this, currentDestinationArrowAzimuthObserver)
-
-        val currentBearingToDestinationObserver = Observer<Float> { azimuth ->
-            binding.tvBearingToDestination.text = "Bearing to: $azimuth °"
-        }
-        viewModel.currentBearingToDestination.observe(this, currentBearingToDestinationObserver)
 
         setupOnclickListeners()
     }
@@ -221,7 +208,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
         newAzimuth: Float
     ) {
         val rotationAnimation = RotateAnimation(
-            viewModel.currentCompassAzimuth.value!!,
+            viewModel.currentCompassAzimuth,
             -newAzimuth,
             Animation.RELATIVE_TO_SELF,
             0.5f,
@@ -234,7 +221,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
 
         binding.ivCompass.startAnimation(rotationAnimation)
 
-        viewModel.currentCompassAzimuth.value = -newAzimuth
+        viewModel.currentCompassAzimuth = -newAzimuth
         viewModel.lastSensorsUpdateTime = System.currentTimeMillis()
     }
 
@@ -242,7 +229,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
         newAzimuth: Float
     ) {
         val rotationAnimation = RotateAnimation(
-            viewModel.currentDestinationArrowAzimuth.value!!,
+            viewModel.currentDestinationArrowAzimuth,
             -newAzimuth,
             Animation.RELATIVE_TO_SELF,
             0.5f,
@@ -254,7 +241,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
         rotationAnimation.fillAfter = true
 
         binding.ivDestinationArrow.startAnimation(rotationAnimation)
-        viewModel.currentDestinationArrowAzimuth.value = -newAzimuth
+        viewModel.currentDestinationArrowAzimuth = -newAzimuth
     }
 
     private fun updateDistanceFromTheDestination() {
