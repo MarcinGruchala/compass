@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    tools:context=".views.MainActivity">
 
     <Button
         android:id="@+id/brnSetDestination"
@@ -24,7 +24,7 @@
         android:background="@drawable/rounded_frame"
         android:elevation="10dp"
         android:padding="15dp"
-        android:text="Distance from the destination: 1222m"
+        android:text="@string/distance_from_the_destination_empty"
         android:textColor="@color/main_green"
         android:textStyle="bold"
         app:drawableTintMode="add"
@@ -35,15 +35,28 @@
     <FrameLayout
         android:id="@+id/flCompassFrame"
         android:layout_width="0dp"
-        android:layout_height="0dp"
+        android:layout_height="wrap_content"
         android:layout_marginStart="32dp"
-        android:layout_marginTop="32dp"
         android:layout_marginEnd="32dp"
-        android:layout_marginBottom="32dp"
         app:layout_constraintBottom_toTopOf="@+id/brnSetDestination"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/tvDistance">
+
+
+        <ImageView
+            android:id="@+id/ivDestinationArrow"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginStart="5dp"
+            android:layout_marginLeft="5dp"
+            android:layout_marginTop="5dp"
+            android:layout_marginEnd="5dp"
+            android:layout_marginRight="5dp"
+            android:layout_marginBottom="5dp"
+            android:contentDescription="@string/destination_arrow_image_description"
+            android:visibility="invisible"
+            app:srcCompat="@drawable/compass_arrow" />
 
         <ImageView
             android:id="@+id/ivCompass"
