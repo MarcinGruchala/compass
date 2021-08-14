@@ -1,5 +1,6 @@
 package com.example.compass.viewmodels
 
+import android.hardware.GeomagneticField
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorManager
@@ -22,9 +23,6 @@ class MainActivityViewModel @Inject constructor(
     var orientation = FloatArray(3)
 
     var lastSensorsUpdateTime = 0L
-    var currentCompassAzimuth = 0f
-
-    var currentDestinationArrowAzimuth = 0f
 
     private val isLastAccelerometerValueCopied: MutableLiveData<Boolean> by lazy {
         MutableLiveData<Boolean>(false)
@@ -32,6 +30,14 @@ class MainActivityViewModel @Inject constructor(
 
     private val isLastMagnetFiledValueCopied: MutableLiveData<Boolean> by lazy {
         MutableLiveData<Boolean>(false)
+    }
+
+    val currentCompassAzimuth: MutableLiveData<Float> by lazy {
+        MutableLiveData<Float>(0f)
+    }
+
+    val currentDestinationArrowAzimuth: MutableLiveData<Float> by lazy {
+        MutableLiveData<Float>(0f)
     }
 
     val currentLocation: MutableLiveData<Location> by lazy {
@@ -52,7 +58,31 @@ class MainActivityViewModel @Inject constructor(
 
     fun getNewAzimuthInDegrees() = Math.toDegrees(orientation[0].toDouble()).toFloat()
 
-    fun getDestination() = repository.destination.value
+    fun getDestinationArrowAzimuth(): Float {
+        val destinationLocation = getLocationFromGeoLocation(repository.destination.value!!)
+        var bearToDestination = currentLocation.value!!.bearingTo(destinationLocation)
+        val geomagneticField = GeomagneticField(
+            currentLocation.value!!.latitude.toFloat(),
+            currentLocation.value!!.longitude.toFloat(),
+            currentLocation.value!!.altitude.toFloat(),
+            System.currentTimeMillis()
+        )
+        val head = currentCompassAzimuth.value!!
+        if (bearToDestination < 0) {
+            bearToDestination += 360;
+        }
+        val direction = bearToDestination - head
+        return direction
+    }
+
+    fun getDestinationLatLon() = repository.destination.value
+
+    fun getLocationFromGeoLocation(geoLocation: GeoLocation): Location {
+        val location = Location("location")
+        location.latitude = geoLocation.lat
+        location.longitude = geoLocation.lon
+        return location
+    }
 
     fun checkDestination(): Boolean {
         if (repository.destination.value == null) {
