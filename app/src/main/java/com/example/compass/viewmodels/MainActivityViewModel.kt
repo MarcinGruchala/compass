@@ -16,23 +16,15 @@ import javax.inject.Inject
 class MainActivityViewModel @Inject constructor(
     private val repository: Repository
 ) : ViewModel() {
-    var lastAccelerometerValue = FloatArray(3)
-    var lastMagneticFieldValue = FloatArray(3)
-    var rotationMatrix = FloatArray(9)
-    var orientation = FloatArray(3)
+    private var lastAccelerometerValue = FloatArray(3)
+    private var lastMagneticFieldValue = FloatArray(3)
+    private var rotationMatrix = FloatArray(9)
+    private var orientation = FloatArray(3)
 
     var lastSensorsUpdateTime = 0L
+
     var currentCompassAzimuth = 0f
-
     var currentDestinationArrowAzimuth = 0f
-
-    private val isLastAccelerometerValueCopied: MutableLiveData<Boolean> by lazy {
-        MutableLiveData<Boolean>(false)
-    }
-
-    private val isLastMagnetFiledValueCopied: MutableLiveData<Boolean> by lazy {
-        MutableLiveData<Boolean>(false)
-    }
 
     val currentLocation: MutableLiveData<Location> by lazy {
         MutableLiveData<Location>()
@@ -52,7 +44,22 @@ class MainActivityViewModel @Inject constructor(
 
     fun getNewAzimuthInDegrees() = Math.toDegrees(orientation[0].toDouble()).toFloat()
 
-    fun getDestination() = repository.destination.value
+    fun getDestinationArrowAzimuth(): Float {
+        val destinationLocation = getLocationFromGeoLocation(repository.destination.value!!)
+        val bearToDestination = currentLocation.value!!.bearingTo(destinationLocation)
+        val head = currentCompassAzimuth
+        val direction = bearToDestination + head
+        return -direction
+    }
+
+    fun getDestinationLatLon() = repository.destination.value
+
+    fun getLocationFromGeoLocation(geoLocation: GeoLocation): Location {
+        val location = Location("location")
+        location.latitude = geoLocation.lat
+        location.longitude = geoLocation.lon
+        return location
+    }
 
     fun checkDestination(): Boolean {
         if (repository.destination.value == null) {
@@ -73,7 +80,6 @@ class MainActivityViewModel @Inject constructor(
                 lastAccelerometerValue,
                 0,event.values.size
             )
-            isLastAccelerometerValueCopied.value = true
         } else if (event.sensor == magneticFieldSensor) {
             System.arraycopy(
                 event.values,
@@ -82,14 +88,11 @@ class MainActivityViewModel @Inject constructor(
                 0,
                 event.values.size
             )
-            isLastMagnetFiledValueCopied.value = true
         }
     }
 
     fun validateNewSensorData(): Boolean {
-        if (isLastAccelerometerValueCopied.value == true &&
-            isLastMagnetFiledValueCopied.value == true &&
-            System.currentTimeMillis() - lastSensorsUpdateTime > 250) {
+        if (System.currentTimeMillis() - lastSensorsUpdateTime > 250) {
             return true
         }
         return false

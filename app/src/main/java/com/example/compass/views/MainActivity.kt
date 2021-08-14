@@ -13,6 +13,7 @@ import android.location.Location
 import android.os.Bundle
 import android.os.Looper
 import android.util.Log
+import android.view.View
 import com.example.compass.R
 import android.view.animation.Animation
 import android.view.animation.RotateAnimation
@@ -69,17 +70,15 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
             }
         }
 
-        val currentLocationObserver = Observer<Location> { location ->
-            binding.tvLocation.text = "Current location: Lat: ${location.latitude} Lon: ${location.longitude}"
+        val currentLocationObserver = Observer<Location> {
             updateDistanceFromTheDestination()
         }
         viewModel.currentLocation.observe(this, currentLocationObserver)
 
         val isDestinationUpdatedObserver = Observer<Boolean> { newValue ->
             if (newValue) {
-                val newDestination = viewModel.getDestination()
-                binding.tvDestination.text = "Destination: Lat: ${newDestination?.lat} Lon: ${newDestination?.lon}"
                 viewModel.isDestinationUpdated.value = false
+                binding.ivDestinationArrow.visibility = View.VISIBLE
                 updateDistanceFromTheDestination()
             }
         }
@@ -108,7 +107,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
             if (viewModel.validateNewSensorData()) {
                 viewModel.calculateOrientation()
                 updateCompass(viewModel.getNewAzimuthInDegrees())
-                updateDestinationArrow(-viewModel.getNewAzimuthInDegrees())
+                if (viewModel.checkDestination()) {
+                    Log.d("MainActivity", "New destination arrow azimuth: ${viewModel.getDestinationArrowAzimuth()}")
+                    updateDestinationArrow(viewModel.getDestinationArrowAzimuth())
+                }
             }
         }
     }
@@ -239,16 +241,13 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
         rotationAnimation.fillAfter = true
 
         binding.ivDestinationArrow.startAnimation(rotationAnimation)
-
         viewModel.currentDestinationArrowAzimuth = -newAzimuth
     }
 
     private fun updateDistanceFromTheDestination() {
-        val destinationFromRepository = viewModel.getDestination()
+        val destinationFromRepository = viewModel.getDestinationLatLon()
         if (destinationFromRepository != null) {
-            val destination = Location("destination")
-            destination.latitude = destinationFromRepository.lat
-            destination.longitude = destinationFromRepository.lon
+            val destination = viewModel.getLocationFromGeoLocation(destinationFromRepository)
             val distance = viewModel.currentLocation.value?.distanceTo(destination)?.toInt()
             binding.tvDistance.text = getString(
                 R.string.distance_from_the_destination,
