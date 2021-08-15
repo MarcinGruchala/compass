@@ -22,7 +22,6 @@ class MainActivityViewModel @Inject constructor(
     private var orientation = FloatArray(3)
 
     var lastSensorsUpdateTime = 0L
-
     var currentCompassAzimuth = 0f
     var currentDestinationArrowAzimuth = 0f
 
