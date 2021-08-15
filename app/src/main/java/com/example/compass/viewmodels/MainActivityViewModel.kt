@@ -68,6 +68,13 @@ class MainActivityViewModel @Inject constructor(
         return true
     }
 
+    fun isCurrentLocationNull(): Boolean {
+        if (currentLocation.value == null) {
+            return true
+        }
+        return false
+    }
+
     fun saveSensorEventData(
         event: SensorEvent,
         accelerometerSensor: Sensor,

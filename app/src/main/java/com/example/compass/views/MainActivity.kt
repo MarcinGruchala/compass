@@ -55,6 +55,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
         setupVariables()
         setupLiveDataObservers()
         setupOnclickListeners()
+
+        if (checkPermissions()) {
+            getLastLocation()
+        }
     }
 
     override fun onResume() {
@@ -77,7 +81,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
             if (viewModel.validateNewSensorData()) {
                 viewModel.calculateOrientation()
                 updateCompass(viewModel.getNewAzimuthInDegrees())
-                if (viewModel.checkDestination()) {
+                if (viewModel.checkDestination() && !viewModel.isCurrentLocationNull()) {
                     updateDestinationArrow(viewModel.getDestinationArrowAzimuth())
                 }
             }
@@ -88,17 +92,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
         sensor: Sensor?,
         accuracy: Int
     ) {}
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == FINE_LOCATION_PERMISSION_REQUEST_CODE) {
-            getPermissions()
-        }
-    }
 
     private fun getPermissions() {
         if (!checkPermissions()) {
@@ -151,6 +144,16 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
         }
     }
 
+    @SuppressLint("MissingPermission")
+    private fun getLastLocation() {
+        if (checkPermissions()) {
+            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                viewModel.currentLocation.value = location
+            }
+        } else {
+            getPermissions()
+        }
+    }
     private fun stopLocationUpdates() {
         fusedLocationClient.removeLocationUpdates(locationCallback)
     }
@@ -190,11 +193,13 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
             updateDistanceFromTheDestination()
         }
         viewModel.currentLocation.observe(this, currentLocationObserver)
+
         val isDestinationUpdatedObserver = Observer<Boolean> { newValue ->
             if (newValue) {
                 viewModel.isDestinationUpdated.value = false
                 binding.ivDestinationArrow.visibility = View.VISIBLE
                 updateDistanceFromTheDestination()
+                updateDestinationArrow(viewModel.getDestinationArrowAzimuth())
             }
         }
         viewModel.isDestinationUpdated.observe(this, isDestinationUpdatedObserver)
