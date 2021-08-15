@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.IntentSender
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -14,7 +15,6 @@ import android.os.Bundle
 import android.os.Looper
 import android.util.Log
 import android.view.View
-import com.example.compass.R
 import android.view.animation.Animation
 import android.view.animation.RotateAnimation
 import androidx.activity.viewModels
@@ -22,6 +22,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Observer
+import com.example.compass.R
 import com.example.compass.databinding.ActivityMainBinding
 import com.example.compass.viewmodels.MainActivityViewModel
 import com.google.android.gms.common.api.ResolvableApiException
@@ -249,10 +250,17 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
         if (destinationFromRepository != null) {
             val destination = viewModel.getLocationFromGeoLocation(destinationFromRepository)
             val distance = viewModel.currentLocation.value?.distanceTo(destination)?.toInt()
-            binding.tvDistance.text = getString(
-                R.string.distance_from_the_destination,
-                distance
-            )
+            if (resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT) {
+                binding.tvDistance.text = getString(
+                    R.string.distance_from_the_destination,
+                    distance
+                )
+            } else {
+                binding.tvDistance.text = getString(
+                    R.string.distance_from_the_destination_land,
+                    distance
+                )
+            }
         }
     }
 }
