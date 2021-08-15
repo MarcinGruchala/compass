@@ -28,6 +28,7 @@
         android:textAlignment="center"
         android:textColor="@color/main_green"
         android:textStyle="bold"
+        android:visibility="invisible"
         app:drawableTintMode="add"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
