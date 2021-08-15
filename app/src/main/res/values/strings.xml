@@ -14,4 +14,5 @@
     <string name="destination_input_description">Please enter lat and lon into fields.</string>
     <string name="destination_input_status_empty_message">Please fill up both fields.</string>
     <string name="destination_input_status_outOfRange_message">Lat range is -90° to 90° \nLon range is -180° to 180°</string>
+    <string name="permissions_not_granted_message">This application need your location to navigate you to your destination</string>
 </resources>
