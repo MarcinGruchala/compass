@@ -27,6 +27,7 @@
         android:text="@string/distance_from_the_destination_empty"
         android:textColor="@color/main_green"
         android:textStyle="bold"
+        android:visibility="invisible"
         app:drawableTintMode="add"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

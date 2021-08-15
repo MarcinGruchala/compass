@@ -50,41 +50,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
         getPermissions()
 
-        sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
-        accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
-        magneticFieldSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-        locationRequest = LocationRequest.create().apply {
-            interval = 10000
-            fastestInterval = 5000
-            priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-        }
-        locationCallback = object : LocationCallback() {
-            override fun onLocationResult(locationResult: LocationResult) {
-                for (location in locationResult.locations) {
-                    Log.d("MainActivity", "Current location: $location")
-                    viewModel.currentLocation.value = location
-                }
-            }
-        }
-
-        val currentLocationObserver = Observer<Location> {
-            updateDistanceFromTheDestination()
-        }
-        viewModel.currentLocation.observe(this, currentLocationObserver)
-
-        val isDestinationUpdatedObserver = Observer<Boolean> { newValue ->
-            if (newValue) {
-                viewModel.isDestinationUpdated.value = false
-                binding.ivDestinationArrow.visibility = View.VISIBLE
-                updateDistanceFromTheDestination()
-            }
-        }
-        viewModel.isDestinationUpdated.observe(this, isDestinationUpdatedObserver)
-
+        setupVariables()
+        setupLiveDataObservers()
         setupOnclickListeners()
     }
 
@@ -109,7 +78,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
                 viewModel.calculateOrientation()
                 updateCompass(viewModel.getNewAzimuthInDegrees())
                 if (viewModel.checkDestination()) {
-                    Log.d("MainActivity", "New destination arrow azimuth: ${viewModel.getDestinationArrowAzimuth()}")
                     updateDestinationArrow(viewModel.getDestinationArrowAzimuth())
                 }
             }
@@ -197,6 +165,41 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
         sensorManager.unregisterListener(this, magneticFieldSensor)
     }
 
+    private fun setupVariables() {
+        sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
+        accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+        magneticFieldSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+        locationRequest = LocationRequest.create().apply {
+            interval = 10000
+            fastestInterval = 5000
+            priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+        }
+        locationCallback = object : LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult) {
+                for (location in locationResult.locations) {
+                    Log.d("MainActivity", "Current location: $location")
+                    viewModel.currentLocation.value = location
+                }
+            }
+        }
+    }
+
+    private fun setupLiveDataObservers() {
+        val currentLocationObserver = Observer<Location> {
+            updateDistanceFromTheDestination()
+        }
+        viewModel.currentLocation.observe(this, currentLocationObserver)
+        val isDestinationUpdatedObserver = Observer<Boolean> { newValue ->
+            if (newValue) {
+                viewModel.isDestinationUpdated.value = false
+                binding.ivDestinationArrow.visibility = View.VISIBLE
+                updateDistanceFromTheDestination()
+            }
+        }
+        viewModel.isDestinationUpdated.observe(this, isDestinationUpdatedObserver)
+    }
+
     private fun setupOnclickListeners() {
         binding.brnSetDestination.setOnClickListener {
             Intent(this,SetDestinationActivity::class.java).also {
@@ -246,6 +249,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
     }
 
     private fun updateDistanceFromTheDestination() {
+        if (viewModel.checkDestination()) {
+            binding.tvDistance.visibility = View.VISIBLE
+        }
         val destinationFromRepository = viewModel.getDestinationLatLon()
         if (destinationFromRepository != null) {
             val destination = viewModel.getLocationFromGeoLocation(destinationFromRepository)
