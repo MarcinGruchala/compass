@@ -32,26 +32,38 @@
         android:id="@+id/etLat"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="36dp"
+        android:layout_marginTop="32dp"
+        android:autofillHints="no"
         android:ems="10"
         android:hint="@string/enter_latHint"
         android:inputType="numberDecimal|numberSigned"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.502"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        android:autofillHints="no" />
+        app:layout_constraintTop_toBottomOf="@+id/tvSetDestinationDescription" />
 
     <EditText
         android:id="@+id/etLon"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
+        android:layout_marginTop="8dp"
+        android:autofillHints="no"
         android:ems="10"
         android:hint="@string/enter_lonHint"
         android:inputType="numberDecimal|numberSigned"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/etLat"
-        android:autofillHints="no"
-        />
+        app:layout_constraintTop_toBottomOf="@+id/etLat" />
+
+    <TextView
+        android:id="@+id/tvSetDestinationDescription"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="@string/destination_input_description"
+        android:textColor="@color/main_green"
+        android:textSize="18sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>
