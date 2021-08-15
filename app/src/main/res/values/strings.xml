@@ -9,4 +9,7 @@
     <string name="distance_from_the_destination">Distance from the destination: %1$dm</string>
     <string name="distance_from_the_destination_empty">Distance from the destination:</string>
     <string name="destination_arrow_image_description">destination arrow image</string>
+    <string name="destination_input_description">Please enter lat and lon into fields.</string>
+    <string name="destination_input_status_empty_message">Please fill up both fields.</string>
+    <string name="destination_input_status_outOfRange_message"> Lat range is -90 to 90 \nLon range is -180 to 180</string>
 </resources>
