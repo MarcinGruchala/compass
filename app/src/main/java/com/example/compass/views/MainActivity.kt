@@ -20,7 +20,6 @@ import android.view.animation.RotateAnimation
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.Observer
 import com.example.compass.R
 import com.example.compass.databinding.ActivityMainBinding
@@ -173,8 +172,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 locationCallback,
                 Looper.getMainLooper()
             )
-        } else {
-            //requestPermissions()
         }
     }
 
@@ -197,6 +194,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             requestPermissions()
         }
     }
+
     private fun stopLocationUpdates() {
         fusedLocationClient.removeLocationUpdates(locationCallback)
     }
