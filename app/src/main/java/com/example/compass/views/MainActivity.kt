@@ -1,7 +1,7 @@
 package com.example.compass.views
 
 import android.Manifest
-import android.annotation.SuppressLint
+import android.app.AlertDialog
 import android.content.Intent
 import android.content.IntentSender
 import android.content.pm.PackageManager
@@ -20,7 +20,6 @@ import android.view.animation.RotateAnimation
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.Observer
 import com.example.compass.R
 import com.example.compass.databinding.ActivityMainBinding
@@ -33,7 +32,7 @@ import dagger.hilt.android.AndroidEntryPoint
 private const val FINE_LOCATION_PERMISSION_REQUEST_CODE = 10
 private const val REQUEST_CHECK_SETTINGS = 20
 @AndroidEntryPoint
-class MainActivity : AppCompatActivity(), SensorEventListener  {
+class MainActivity : AppCompatActivity(), SensorEventListener {
     private val requiredPermissions = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
     private lateinit var binding: ActivityMainBinding
     private lateinit var sensorManager: SensorManager
@@ -43,6 +42,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
     private lateinit var locationRequest: LocationRequest
     private lateinit var locationCallback: LocationCallback
     private val viewModel: MainActivityViewModel by viewModels()
+    var isSetDestinationButtonClicked = false
 
     override fun onCreate(
         savedInstanceState: Bundle?
@@ -50,15 +50,19 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        getPermissions()
+        requestPermissions()
 
         setupVariables()
         setupLiveDataObservers()
         setupOnclickListeners()
+
     }
 
     override fun onResume() {
         super.onResume()
+        if (checkPermissions()) {
+            getLastLocation()
+        }
         registerSensorsListeners()
         checkLocationSettingsAndStartLocationUpdates()
     }
@@ -77,7 +81,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
             if (viewModel.validateNewSensorData()) {
                 viewModel.calculateOrientation()
                 updateCompass(viewModel.getNewAzimuthInDegrees())
-                if (viewModel.checkDestination()) {
+                if (viewModel.checkDestination() && !viewModel.isCurrentLocationNull()) {
                     updateDestinationArrow(viewModel.getDestinationArrowAzimuth())
                 }
             }
@@ -95,12 +99,23 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == FINE_LOCATION_PERMISSION_REQUEST_CODE) {
-            getPermissions()
+        if (requestCode == FINE_LOCATION_PERMISSION_REQUEST_CODE &&
+                grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_DENIED) {
+            showPermissionsDeniedDialogWindow()
+        }
+        if (requestCode == FINE_LOCATION_PERMISSION_REQUEST_CODE &&
+            grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
+        ) {
+            if (isSetDestinationButtonClicked) {
+                isSetDestinationButtonClicked = false
+                Intent(this,SetDestinationActivity::class.java).also {
+                    startActivity(it)
+                }
+            }
         }
     }
 
-    private fun getPermissions() {
+    private fun requestPermissions() {
         if (!checkPermissions()) {
             ActivityCompat.requestPermissions(
                 this,
@@ -111,9 +126,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
     }
 
     private fun checkPermissions(): Boolean {
-        return requiredPermissions.all {
-            ContextCompat.checkSelfPermission(baseContext,it) == PackageManager.PERMISSION_GRANTED
-        }
+        return ActivityCompat.checkSelfPermission(
+            this,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        )  == PackageManager.PERMISSION_GRANTED
     }
 
     private fun checkLocationSettingsAndStartLocationUpdates() {
@@ -138,16 +154,43 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
         }
     }
 
-    @SuppressLint("MissingPermission")
     private fun startLocationUpdates() {
         if (checkPermissions()) {
+            if (ActivityCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                return
+            }
             fusedLocationClient.requestLocationUpdates(
                 locationRequest,
                 locationCallback,
                 Looper.getMainLooper()
             )
+        }
+    }
+
+    private fun getLastLocation() {
+        if (checkPermissions()) {
+            if (ActivityCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                return
+            }
+            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                viewModel.currentLocation.value = location
+            }
         } else {
-            getPermissions()
+            requestPermissions()
         }
     }
 
@@ -178,7 +221,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
                 for (location in locationResult.locations) {
-                    Log.d("MainActivity", "Current location: $location")
                     viewModel.currentLocation.value = location
                 }
             }
@@ -190,11 +232,15 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
             updateDistanceFromTheDestination()
         }
         viewModel.currentLocation.observe(this, currentLocationObserver)
+
         val isDestinationUpdatedObserver = Observer<Boolean> { newValue ->
             if (newValue) {
                 viewModel.isDestinationUpdated.value = false
                 binding.ivDestinationArrow.visibility = View.VISIBLE
                 updateDistanceFromTheDestination()
+                if (!viewModel.isCurrentLocationNull()) {
+                    updateDestinationArrow(viewModel.getDestinationArrowAzimuth())
+                }
             }
         }
         viewModel.isDestinationUpdated.observe(this, isDestinationUpdatedObserver)
@@ -202,8 +248,13 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
 
     private fun setupOnclickListeners() {
         binding.brnSetDestination.setOnClickListener {
-            Intent(this,SetDestinationActivity::class.java).also {
-                startActivity(it)
+            isSetDestinationButtonClicked = true
+            if (!checkPermissions()) {
+                requestPermissions()
+            } else {
+                Intent(this,SetDestinationActivity::class.java).also {
+                    startActivity(it)
+                }
             }
         }
     }
@@ -268,5 +319,17 @@ class MainActivity : AppCompatActivity(), SensorEventListener  {
                 )
             }
         }
+    }
+
+    private fun showPermissionsDeniedDialogWindow() {
+        AlertDialog.Builder(this)
+            .setMessage(
+                applicationContext.getString(
+                    R.string.permissions_not_granted_message
+                )
+            )
+            .setPositiveButton("OK") { _, _ -> }
+            .create()
+            .show()
     }
 }
