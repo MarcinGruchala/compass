@@ -117,7 +117,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     private fun requestPermissions() {
         if (!checkPermissions()) {
-            Log.d("MainActivity", "Request permissions")
             ActivityCompat.requestPermissions(
                 this,
                 requiredPermissions,
@@ -222,7 +221,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult) {
                 for (location in locationResult.locations) {
-                    Log.d("MainActivity", "Current location: $location")
                     viewModel.currentLocation.value = location
                 }
             }
@@ -250,7 +248,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     private fun setupOnclickListeners() {
         binding.brnSetDestination.setOnClickListener {
-            Log.d("MainActivity","Permissions granted: ${checkPermissions()}")
             isSetDestinationButtonClicked = true
             if (!checkPermissions()) {
                 requestPermissions()
