@@ -1,6 +1,6 @@
 # Compass
 
-Android recruitment task for Netguru. Native Android application that allows users to set a destination and shows direction and distance to it.
+Native Android application that allows users to set a destination and shows direction and distance to it.
 
 # Demo 
 
